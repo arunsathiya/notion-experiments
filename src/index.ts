@@ -60,6 +60,29 @@ async function checkForNewPages(notion: Client, databaseId: string): Promise<voi
 }
 
 async function addIconAndCover(notion: Client, pageId: string): Promise<void> {
+  const coverOptions = [
+    { type: "solid", color: "red" },
+    { type: "solid", color: "blue" },
+    { type: "solid", color: "yellow" },
+    { type: "gradient", number: "8" },
+    { type: "gradient", number: "4" },
+    { type: "gradient", number: "2" },
+    { type: "gradient", number: "11" },
+    { type: "gradient", number: "10" },
+    { type: "gradient", number: "5" },
+    { type: "gradient", number: "3" }
+  ];
+  
+  const randomCover = coverOptions[Math.floor(Math.random() * coverOptions.length)];
+  
+  const getCoverUrl = (cover: typeof randomCover) => {
+    if (cover.type === "solid") {
+      return `https://www.notion.so/images/page-cover/solid_${cover.color}.png`;
+    } else {
+      return `https://www.notion.so/images/page-cover/gradients_${cover.number}.png`;
+    }
+  };
+
   try {
     await notion.pages.update({
       page_id: pageId,
@@ -70,20 +93,24 @@ async function addIconAndCover(notion: Client, pageId: string): Promise<void> {
       cover: {
         type: "external",
         external: {
-          url: "https://www.notion.so/images/page-cover/solid_red.png"
+          url: getCoverUrl(randomCover)
         }
       }
-    })
-    const message = `Updated page ${pageId} with icon and cover`
-    console.log(message)
+    });
+    
+    const coverDescription = randomCover.type === "solid" 
+      ? `solid ${randomCover.color}` 
+      : `gradient ${randomCover.number}`;
+    const message = `Updated page ${pageId} with icon and ${coverDescription} cover`;
+    console.log(message);
     if (process.env.GITHUB_ACTIONS) {
-      core.info(message)
+      core.info(message);
     }
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : String(error)
-    console.error(`Error updating page ${pageId}: ${errorMessage}`)
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error(`Error updating page ${pageId}: ${errorMessage}`);
     if (process.env.GITHUB_ACTIONS) {
-      core.error(`Error updating page ${pageId}: ${errorMessage}`)
+      core.error(`Error updating page ${pageId}: ${errorMessage}`);
     }
   }
 }
