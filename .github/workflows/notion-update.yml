@@ -9,6 +9,9 @@ jobs:
   update-notion-pages:
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+      
       - name: Update Notion Pages
         uses: arunsathiya/notion-experiments@v1
         with:
