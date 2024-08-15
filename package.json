@@ -1,21 +1,23 @@
 {
-  "name": "typescript-action",
-  "description": "GitHub Actions TypeScript template",
-  "version": "0.0.0",
+  "name": "notion-page-updater-action",
+  "description": "GitHub Action to add icons and cover images to new Notion pages",
+  "version": "1.0.0",
   "author": "",
+  "type": "module",
   "private": true,
-  "homepage": "https://github.com/actions/typescript-action",
+  "homepage": "https://github.com/yourusername/notion-page-updater-action",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/actions/typescript-action.git"
+    "url": "git+https://github.com/yourusername/notion-page-updater-action.git"
   },
   "bugs": {
-    "url": "https://github.com/actions/typescript-action/issues"
+    "url": "https://github.com/yourusername/notion-page-updater-action/issues"
   },
   "keywords": [
     "actions",
     "node",
-    "setup"
+    "setup",
+    "notion"
   ],
   "exports": {
     ".": "./dist/index.js"
@@ -66,7 +68,9 @@
     ]
   },
   "dependencies": {
-    "@actions/core": "^1.10.1"
+    "@actions/core": "^1.10.1",
+    "@actions/github": "^6.0.0",
+    "@notionhq/client": "^2.2.15"
   },
   "devDependencies": {
     "@jest/globals": "^29.7.0",
