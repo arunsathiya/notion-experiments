@@ -1,5 +1,5 @@
 import * as core from '@actions/core'
-import { Client } from '@notionhq/client'
+import { Client, isFullPageOrDatabase } from '@notionhq/client'
 import dotenv from 'dotenv'
 
 // Load environment variables from .env file when not in GitHub Actions
@@ -39,38 +39,16 @@ async function checkForNewPages(notion: Client, databaseId: string): Promise<voi
     // First, retrieve the database schema
     const database = await notion.databases.retrieve({ database_id: databaseId })
 
-    // Check if 'Icon' and 'Cover' properties exist
-    const iconProperty = Object.values(database.properties).find(prop => prop.name === 'Icon')
-    const coverProperty = Object.values(database.properties).find(prop => prop.name === 'Cover')
-
-    if (!iconProperty || !coverProperty) {
-      throw new Error(`Database is missing required properties. Found: ${Object.values(database.properties).map(p => p.name).join(', ')}`)
-    }
-
-    const response = await notion.databases.query({
-      database_id: databaseId,
-      filter: {
-        and: [
-          {
-            property: iconProperty.name,
-            rich_text: {
-              is_empty: true
-            }
-          },
-          {
-            property: coverProperty.name,
-            files: {
-              is_empty: true
-            }
-          }
-        ]
-      }
-    })
-
-    console.log('Query response:', JSON.stringify(response, null, 2))
-
-    for (const page of response.results) {
-      await addIconAndCover(notion, page.id)
+    const pages = await notion.databases.query({ database_id: databaseId })
+    for (const page of pages.results) {
+        if (!isFullPageOrDatabase(page)) {
+            continue
+        }
+        const icon = page.icon
+        const cover = page.cover
+        if (!icon && !cover) {
+            await addIconAndCover(notion, page.id)
+        }
     }
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error)
@@ -92,7 +70,7 @@ async function addIconAndCover(notion: Client, pageId: string): Promise<void> {
       cover: {
         type: "external",
         external: {
-          url: "https://images.unsplash.com/photo-1518020382113-a7e8fc38eac9"
+          url: "https://www.notion.so/images/page-cover/solid_red.png"
         }
       }
     })
