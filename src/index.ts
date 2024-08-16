@@ -43,7 +43,7 @@ async function checkForNewPages(notion: Client, databaseId: string): Promise<voi
     const pages = await notion.databases.query({ database_id: databaseId })
     const pagesToUpdate = pages.results.filter(page => isFullPageOrDatabase(page) && (!page.icon && !page.cover))
     const updatedPages = await Promise.allSettled(
-      pagesToUpdate.map(page => addIconAndCover(notion, page.id))
+      pagesToUpdate.map(page => retryUpdate(notion, page.id))
     )
     const successCount = updatedPages.filter(result => result.status === 'fulfilled').length
     const failCount = updatedPages.filter(result => result.status === 'rejected').length

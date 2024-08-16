@@ -2825,15 +2825,15 @@ exports.isMentionRichTextItemResponse = isMentionRichTextItemResponse;
 var __webpack_unused_export__;
 
 __webpack_unused_export__ = ({ value: true });
-exports.pj = __webpack_unused_export__ = __webpack_unused_export__ = __webpack_unused_export__ = __webpack_unused_export__ = __webpack_unused_export__ = __webpack_unused_export__ = __webpack_unused_export__ = __webpack_unused_export__ = __webpack_unused_export__ = __webpack_unused_export__ = __webpack_unused_export__ = __webpack_unused_export__ = __webpack_unused_export__ = __webpack_unused_export__ = exports.KU = void 0;
+exports.pj = __webpack_unused_export__ = __webpack_unused_export__ = __webpack_unused_export__ = __webpack_unused_export__ = __webpack_unused_export__ = __webpack_unused_export__ = __webpack_unused_export__ = __webpack_unused_export__ = __webpack_unused_export__ = __webpack_unused_export__ = exports.Hy = __webpack_unused_export__ = exports.or = __webpack_unused_export__ = exports.KU = void 0;
 var Client_1 = __nccwpck_require__(6492);
 Object.defineProperty(exports, "KU", ({ enumerable: true, get: function () { return Client_1.default; } }));
 var logging_1 = __nccwpck_require__(2096);
 __webpack_unused_export__ = ({ enumerable: true, get: function () { return logging_1.LogLevel; } });
 var errors_1 = __nccwpck_require__(8259);
-__webpack_unused_export__ = ({ enumerable: true, get: function () { return errors_1.APIErrorCode; } });
+Object.defineProperty(exports, "or", ({ enumerable: true, get: function () { return errors_1.APIErrorCode; } }));
 __webpack_unused_export__ = ({ enumerable: true, get: function () { return errors_1.ClientErrorCode; } });
-__webpack_unused_export__ = ({ enumerable: true, get: function () { return errors_1.APIResponseError; } });
+Object.defineProperty(exports, "Hy", ({ enumerable: true, get: function () { return errors_1.APIResponseError; } }));
 __webpack_unused_export__ = ({ enumerable: true, get: function () { return errors_1.UnknownHTTPResponseError; } });
 __webpack_unused_export__ = ({ enumerable: true, get: function () { return errors_1.RequestTimeoutError; } });
 // Error helpers
@@ -32197,7 +32197,7 @@ async function checkForNewPages(notion, databaseId) {
         const database = await notion.databases.retrieve({ database_id: databaseId });
         const pages = await notion.databases.query({ database_id: databaseId });
         const pagesToUpdate = pages.results.filter(page => (0,_notionhq_client__WEBPACK_IMPORTED_MODULE_1__/* .isFullPageOrDatabase */ .pj)(page) && (!page.icon && !page.cover));
-        const updatedPages = await Promise.allSettled(pagesToUpdate.map(page => addIconAndCover(notion, page.id)));
+        const updatedPages = await Promise.allSettled(pagesToUpdate.map(page => retryUpdate(notion, page.id)));
         const successCount = updatedPages.filter(result => result.status === 'fulfilled').length;
         const failCount = updatedPages.filter(result => result.status === 'rejected').length;
         console.log(`Updated ${successCount} pages successfully. Failed to update ${failCount} pages.`);
@@ -32221,11 +32221,11 @@ async function retryUpdate(notion, pageId) {
             return;
         }
         catch (error) {
-            if (error instanceof APIResponseError && error.code === APIErrorCode.RateLimited) {
+            if (error instanceof _notionhq_client__WEBPACK_IMPORTED_MODULE_1__/* .APIResponseError */ .Hy && error.code === _notionhq_client__WEBPACK_IMPORTED_MODULE_1__/* .APIErrorCode.RateLimited */ .or.RateLimited) {
                 retries++;
                 console.log(`Rate limited on page ${pageId}, retrying in ${RETRY_DELAY}ms`);
                 if (process.env.GITHUB_ACTIONS) {
-                    core.info(`Rate limited on page ${pageId}, retrying in ${RETRY_DELAY}ms`);
+                    _actions_core__WEBPACK_IMPORTED_MODULE_0__.info(`Rate limited on page ${pageId}, retrying in ${RETRY_DELAY}ms`);
                 }
                 await new Promise(resolve => setTimeout(resolve, RETRY_DELAY * retries));
             }
