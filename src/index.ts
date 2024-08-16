@@ -69,11 +69,11 @@ async function retryUpdate(notion: Client, pageId: string): Promise<void> {
     } catch (error) {
       if (error instanceof APIResponseError && error.code === APIErrorCode.RateLimited) {
         retries++
-        console.log(`Rate limited on page ${pageId}, retrying in ${RETRY_DELAY}ms`)
+        console.log(`Rate limited on page ${pageId}, retry attempt ${retries+1}, retrying in ${RETRY_DELAY}ms`)
         if (process.env.GITHUB_ACTIONS) {
-          core.info(`Rate limited on page ${pageId}, retrying in ${RETRY_DELAY}ms`)
+          core.info(`Rate limited on page ${pageId}, retry attempt ${retries+1}, retrying in ${RETRY_DELAY}ms`)
         }
-        await new Promise(resolve => setTimeout(resolve, RETRY_DELAY * retries))
+        await new Promise(resolve => setTimeout(resolve, RETRY_DELAY * (2 ** retries)))
       } else {
         throw error
       }

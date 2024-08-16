@@ -32223,11 +32223,11 @@ async function retryUpdate(notion, pageId) {
         catch (error) {
             if (error instanceof _notionhq_client__WEBPACK_IMPORTED_MODULE_1__/* .APIResponseError */ .Hy && error.code === _notionhq_client__WEBPACK_IMPORTED_MODULE_1__/* .APIErrorCode.RateLimited */ .or.RateLimited) {
                 retries++;
-                console.log(`Rate limited on page ${pageId}, retrying in ${RETRY_DELAY}ms`);
+                console.log(`Rate limited on page ${pageId}, retry attempt ${retries + 1}, retrying in ${RETRY_DELAY}ms`);
                 if (process.env.GITHUB_ACTIONS) {
-                    _actions_core__WEBPACK_IMPORTED_MODULE_0__.info(`Rate limited on page ${pageId}, retrying in ${RETRY_DELAY}ms`);
+                    _actions_core__WEBPACK_IMPORTED_MODULE_0__.info(`Rate limited on page ${pageId}, retry attempt ${retries + 1}, retrying in ${RETRY_DELAY}ms`);
                 }
-                await new Promise(resolve => setTimeout(resolve, RETRY_DELAY * retries));
+                await new Promise(resolve => setTimeout(resolve, RETRY_DELAY * (2 ** retries)));
             }
             else {
                 throw error;
