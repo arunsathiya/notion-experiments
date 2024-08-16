@@ -36,19 +36,14 @@ export async function run(): Promise<void> {
 
 async function checkForNewPages(notion: Client, databaseId: string): Promise<void> {
   try {
-    // First, retrieve the database schema
     const database = await notion.databases.retrieve({ database_id: databaseId })
-
     const pages = await notion.databases.query({ database_id: databaseId })
-    for (const page of pages.results) {
-        if (!isFullPageOrDatabase(page)) {
-            continue
-        }
-        const icon = page.icon
-        const cover = page.cover
-        if (!icon && !cover) {
-            await addIconAndCover(notion, page.id)
-        }
+    const pagesToUpdate = pages.results.filter(page => isFullPageOrDatabase(page) && (!page.icon && !page.cover))
+    const updatePages = pagesToUpdate.map(page => addIconAndCover(notion, page.id))
+    await Promise.all(updatePages)
+    console.log(`Updated ${updatePages.length} pages`)
+    if (process.env.GITHUB_ACTIONS) {
+      core.info(`Updated ${updatePages.length} pages`)
     }
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error)

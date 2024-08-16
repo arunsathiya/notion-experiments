@@ -32192,18 +32192,14 @@ async function run() {
 }
 async function checkForNewPages(notion, databaseId) {
     try {
-        // First, retrieve the database schema
         const database = await notion.databases.retrieve({ database_id: databaseId });
         const pages = await notion.databases.query({ database_id: databaseId });
-        for (const page of pages.results) {
-            if (!(0,_notionhq_client__WEBPACK_IMPORTED_MODULE_1__/* .isFullPageOrDatabase */ .pj)(page)) {
-                continue;
-            }
-            const icon = page.icon;
-            const cover = page.cover;
-            if (!icon && !cover) {
-                await addIconAndCover(notion, page.id);
-            }
+        const pagesToUpdate = pages.results.filter(page => (0,_notionhq_client__WEBPACK_IMPORTED_MODULE_1__/* .isFullPageOrDatabase */ .pj)(page) && (!page.icon && !page.cover));
+        const updatePages = pagesToUpdate.map(page => addIconAndCover(notion, page.id));
+        await Promise.all(updatePages);
+        console.log(`Updated ${updatePages.length} pages`);
+        if (process.env.GITHUB_ACTIONS) {
+            _actions_core__WEBPACK_IMPORTED_MODULE_0__.info(`Updated ${updatePages.length} pages`);
         }
     }
     catch (error) {
