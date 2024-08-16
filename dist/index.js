@@ -32168,6 +32168,8 @@ var __webpack_exports__ = {};
 if (!process.env.GITHUB_ACTIONS) {
     dotenv__WEBPACK_IMPORTED_MODULE_2___default().config();
 }
+const MAX_RETRIES = 3;
+const RETRY_DELAY = 1000;
 async function run() {
     try {
         const notionApiKey = process.env.GITHUB_ACTIONS
@@ -32195,11 +32197,12 @@ async function checkForNewPages(notion, databaseId) {
         const database = await notion.databases.retrieve({ database_id: databaseId });
         const pages = await notion.databases.query({ database_id: databaseId });
         const pagesToUpdate = pages.results.filter(page => (0,_notionhq_client__WEBPACK_IMPORTED_MODULE_1__/* .isFullPageOrDatabase */ .pj)(page) && (!page.icon && !page.cover));
-        const updatePages = pagesToUpdate.map(page => addIconAndCover(notion, page.id));
-        await Promise.all(updatePages);
-        console.log(`Updated ${updatePages.length} pages`);
+        const updatedPages = await Promise.allSettled(pagesToUpdate.map(page => addIconAndCover(notion, page.id)));
+        const successCount = updatedPages.filter(result => result.status === 'fulfilled').length;
+        const failCount = updatedPages.filter(result => result.status === 'rejected').length;
+        console.log(`Updated ${successCount} pages successfully. Failed to update ${failCount} pages.`);
         if (process.env.GITHUB_ACTIONS) {
-            _actions_core__WEBPACK_IMPORTED_MODULE_0__.info(`Updated ${updatePages.length} pages`);
+            _actions_core__WEBPACK_IMPORTED_MODULE_0__.info(`Updated ${successCount} pages successfully. Failed to update ${failCount} pages.`);
         }
     }
     catch (error) {
@@ -32209,6 +32212,29 @@ async function checkForNewPages(notion, databaseId) {
             _actions_core__WEBPACK_IMPORTED_MODULE_0__.error(`Error querying database: ${errorMessage}`);
         }
     }
+}
+async function retryUpdate(notion, pageId) {
+    let retries = 0;
+    while (retries < MAX_RETRIES) {
+        try {
+            await addIconAndCover(notion, pageId);
+            return;
+        }
+        catch (error) {
+            if (error instanceof APIResponseError && error.code === APIErrorCode.RateLimited) {
+                retries++;
+                console.log(`Rate limited on page ${pageId}, retrying in ${RETRY_DELAY}ms`);
+                if (process.env.GITHUB_ACTIONS) {
+                    core.info(`Rate limited on page ${pageId}, retrying in ${RETRY_DELAY}ms`);
+                }
+                await new Promise(resolve => setTimeout(resolve, RETRY_DELAY * retries));
+            }
+            else {
+                throw error;
+            }
+        }
+    }
+    throw new Error(`Failed to update page ${pageId} after ${MAX_RETRIES} retries`);
 }
 async function addIconAndCover(notion, pageId) {
     const coverOptions = [

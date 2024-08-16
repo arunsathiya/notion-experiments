@@ -1,11 +1,14 @@
 import * as core from '@actions/core'
-import { Client, isFullPageOrDatabase } from '@notionhq/client'
+import { APIErrorCode, APIResponseError, Client, isFullPageOrDatabase } from '@notionhq/client'
 import dotenv from 'dotenv'
 
 // Load environment variables from .env file when not in GitHub Actions
 if (!process.env.GITHUB_ACTIONS) {
   dotenv.config()
 }
+
+const MAX_RETRIES = 3
+const RETRY_DELAY = 1000
 
 export async function run(): Promise<void> {
   try {
@@ -39,11 +42,14 @@ async function checkForNewPages(notion: Client, databaseId: string): Promise<voi
     const database = await notion.databases.retrieve({ database_id: databaseId })
     const pages = await notion.databases.query({ database_id: databaseId })
     const pagesToUpdate = pages.results.filter(page => isFullPageOrDatabase(page) && (!page.icon && !page.cover))
-    const updatePages = pagesToUpdate.map(page => addIconAndCover(notion, page.id))
-    await Promise.all(updatePages)
-    console.log(`Updated ${updatePages.length} pages`)
+    const updatedPages = await Promise.allSettled(
+      pagesToUpdate.map(page => addIconAndCover(notion, page.id))
+    )
+    const successCount = updatedPages.filter(result => result.status === 'fulfilled').length
+    const failCount = updatedPages.filter(result => result.status === 'rejected').length
+    console.log(`Updated ${successCount} pages successfully. Failed to update ${failCount} pages.`)
     if (process.env.GITHUB_ACTIONS) {
-      core.info(`Updated ${updatePages.length} pages`)
+      core.info(`Updated ${successCount} pages successfully. Failed to update ${failCount} pages.`)
     }
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error)
@@ -52,6 +58,28 @@ async function checkForNewPages(notion: Client, databaseId: string): Promise<voi
       core.error(`Error querying database: ${errorMessage}`)
     }
   }
+}
+
+async function retryUpdate(notion: Client, pageId: string): Promise<void> {
+  let retries = 0
+  while (retries < MAX_RETRIES) {
+    try {
+      await addIconAndCover(notion, pageId)
+      return
+    } catch (error) {
+      if (error instanceof APIResponseError && error.code === APIErrorCode.RateLimited) {
+        retries++
+        console.log(`Rate limited on page ${pageId}, retrying in ${RETRY_DELAY}ms`)
+        if (process.env.GITHUB_ACTIONS) {
+          core.info(`Rate limited on page ${pageId}, retrying in ${RETRY_DELAY}ms`)
+        }
+        await new Promise(resolve => setTimeout(resolve, RETRY_DELAY * retries))
+      } else {
+        throw error
+      }
+    }
+  }
+  throw new Error(`Failed to update page ${pageId} after ${MAX_RETRIES} retries`)
 }
 
 async function addIconAndCover(notion: Client, pageId: string): Promise<void> {
