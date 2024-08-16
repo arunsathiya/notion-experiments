@@ -13,7 +13,7 @@ jobs:
         uses: actions/checkout@v3
       
       - name: Update Notion Pages
-        uses: arunsathiya/notion-experiments@v2
+        uses: arunsathiya/notion-experiments@main
         with:
           notion_api_key: ${{ secrets.NOTION_API_KEY }}
           notion_database_id: ${{ secrets.NOTION_DATABASE_ID }}
