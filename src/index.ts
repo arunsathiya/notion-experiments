@@ -39,7 +39,6 @@ export async function run(): Promise<void> {
 
 async function checkForNewPages(notion: Client, databaseId: string): Promise<void> {
   try {
-    const database = await notion.databases.retrieve({ database_id: databaseId })
     const pages = await notion.databases.query({ database_id: databaseId })
     const pagesToUpdate = pages.results.filter(page => isFullPageOrDatabase(page) && (!page.icon && !page.cover))
     const updatedPages = await Promise.allSettled(

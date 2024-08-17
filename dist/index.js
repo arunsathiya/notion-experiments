@@ -32194,7 +32194,6 @@ async function run() {
 }
 async function checkForNewPages(notion, databaseId) {
     try {
-        const database = await notion.databases.retrieve({ database_id: databaseId });
         const pages = await notion.databases.query({ database_id: databaseId });
         const pagesToUpdate = pages.results.filter(page => (0,_notionhq_client__WEBPACK_IMPORTED_MODULE_1__/* .isFullPageOrDatabase */ .pj)(page) && (!page.icon && !page.cover));
         const updatedPages = await Promise.allSettled(pagesToUpdate.map(page => retryUpdate(notion, page.id)));
